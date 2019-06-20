@@ -19,5 +19,4 @@ port = input('Введите тип и номер интерфейса: ')
 vlans = input(port_temp_inp[mode])
 
 print('interface {}'.format(port))
-
-print('\n'.join(port_temp[mode]).format(port, vlans))
+print('\n'.join(port_temp[mode]).format(vlans))
