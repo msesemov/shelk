@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+from sys import argv
+
+vlan_num = argv[1]
 
 vlan_set = []
 mac_template = '{}\t{}\t{}'
@@ -12,4 +15,5 @@ with open('CAM_table.txt', 'r') as f:
 			vlan_set.append(c)
 vlan_set.sort()
 for vlan in vlan_set:
-	print(mac_template.format(vlan[0], vlan[1], vlan[2]))
+	if vlan[0] == int(vlan_num):
+		print(mac_template.format(vlan[0], vlan[1], vlan[2]))
