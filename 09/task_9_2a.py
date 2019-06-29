@@ -27,15 +27,15 @@ def generate_trunk_config(intf_vlan_mapping, trunk_template):
 #intf_vlan_mapping = trunk_config
 #trunk_template = trunk_mode_template
 
-    command = []
+    int_cfg = {key: [] for key in intf_vlan_mapping}
     for intf, vlan in intf_vlan_mapping.items():
-        command.append('interface ' + intf)
         for line in trunk_template:
             if line.endswith('allowed vlan'):
                 v = ','.join([str(vl) for vl in vlan])
-                command.append(f'{line} {v}')
+                int_cfg[intf].append(f'{line} {v}')
+                
             else:
-                command.append(line)
-    return command
+                int_cfg[intf].append(line)
+    return int_cfg
 
 print(generate_trunk_config(trunk_config, trunk_mode_template))
