@@ -23,7 +23,7 @@
 ignore = ['duplex', 'alias', 'Current configuration']
 
 
-#def ignore_command(command, ignore):
+def ignore_command(command, ignore):
     '''
     Функция проверяет содержится ли в команде слово из списка ignore.
 
@@ -35,17 +35,32 @@ ignore = ['duplex', 'alias', 'Current configuration']
     * False - если нет
     '''
 
-config_filename = 'config_sw1.txt'
+    result = False
+    for i_word in ignore:
+        for word in command.split():
+            if word == i_word:
+                result = True
+    return result
 
+
+def convert_config_to_dict(config_filename):
+#config_filename = 'config_sw1.txt'
+    conf = {}
     with open(config_filename, 'r') as f:
         for line in f:
-            for word in line.split():
-#    return any(word in command for word in ignore)
+            if not line.startswith('!'):
+                if not ignore_command(line, ignore):
+                    if not line.startswith(' '):
+                        cfg_key = line.strip()
+                        conf[cfg_key] = []
+                        cfg_val = []
+                    else:
+                        cfg_val.append(line.strip())
+                        value = {cfg_key: cfg_val}
+                        conf.update(value)
+    return conf
 
-    with open(config_filename, 'r') as f:
-        for line in f:
-            if line.startswith('interface'):
-                intf = line.split()[-1]
 
-#print(get_int_vlan_map('config_sw1.txt'))
+
+print(convert_config_to_dict('config_sw1.txt'))
 
