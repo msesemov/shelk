@@ -28,22 +28,17 @@ R6           Fa 0/2          143           R S I           2811       Fa 0/0
 Ограничение: Все задания надо выполнять используя только пройденные темы.
 '''
 
-with open('sh_cdp_n_sw1.txt', 'r') as f:
-    c = f.read()
 
 def parse_cdp_neighbors(command):
 
     neighbors = {}
-    for line in c.split('\n'):
-        if '>' in line:
-            host = line.split('>')[0]
-        elif line.startswith('R'):
-            nbr, lcl1, lcl2, _, _, _, _, _, rmt1, rmt2 = line.split()
+    for cdp in command.split('\n'):
+        if '>' in cdp:
+            host = cdp.split('>')[0]
+        elif cdp and cdp[-1].isdigit():
+            nbr, lcl1, lcl2, *other, rmt1, rmt2 = cdp.split()
             lcl_port = (host, f'{lcl1}{lcl2}')
             rmt_port = (nbr, f'{rmt1}{rmt2}')
             value = {lcl_port: rmt_port}
             neighbors.update(value)
     return neighbors
-
-print(parse_cdp_neighbors(c))
-

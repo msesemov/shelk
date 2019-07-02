@@ -12,7 +12,6 @@
     {('R4', 'Fa0/1'): ('R5', 'Fa0/1'),
      ('R4', 'Fa0/2'): ('R6', 'Fa0/0')}
 
-
 Cгенерировать топологию, которая соответствует выводу из файлов:
 * sh_cdp_n_sw1.txt
 * sh_cdp_n_r1.txt
@@ -41,23 +40,39 @@ Cгенерировать топологию, которая соответст�
 
 '''
 
+import task_11_1
 
-with open('sh_cdp_n_sw1.txt', 'r') as f:
-    c = f.read()
 
-def parse_cdp_neighbors(command):
+files = [
+    'sh_cdp_n_sw1.txt',
+    'sh_cdp_n_r1.txt',
+    'sh_cdp_n_r2.txt',
+    'sh_cdp_n_r3.txt']
+topology = {}
 
-    neighbors = {}
-    for line in c.split('\n'):
-        if '>' in line:
-            host = line.split('>')[0]
-        elif line.startswith('R'):
-            nbr, lcl1, lcl2, _, _, _, _, _, rmt1, rmt2 = line.split()
-            lcl_port = (host, f'{lcl1}{lcl2}')
-            rmt_port = (nbr, f'{rmt1}{rmt2}')
-            value = {lcl_port: rmt_port}
-            neighbors.update(value)
-    return neighbors
+for sh_cdp in files:
+    with open(sh_cdp, 'r') as f:
+        top = task_11_1.parse_cdp_neighbors(f.read())
+        topology.update(top)
 
-print(parse_cdp_neighbors(c))
+result = {}
+for k, v in topology.items():
+    if k in topology.values():
+        #pop_val = (k: v)
+        #topology.pop(pop_val)
+        print('\t', k, '\t', v)
 
+  #  else:
+ #       print(key, value)
+    #print(key, value)
+
+#print(result)
+#def create_network_map(filenames):
+'''
+    параметр filenames, который ожидает как аргумент список с именами файлов,
+    в которых находится вывод команды show cdp neighbors.
+    Функция возвращет словарь, который описывает соединения между устройствами.
+    Структура словаря:
+    {('R4', 'Fa0/1'): ('R5', 'Fa0/1'),
+     ('R4', 'Fa0/2'): ('R6', 'Fa0/0')}
+'''
