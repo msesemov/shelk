@@ -39,46 +39,45 @@ Cгенерировать топологию, которая соответст�
 > pip install graphviz
 
 '''
-
 import task_11_1
-#import draw_network_graph
+import draw_network_graph as dng
 
 files = [
     'sh_cdp_n_sw1.txt',
     'sh_cdp_n_r1.txt',
     'sh_cdp_n_r2.txt',
     'sh_cdp_n_r3.txt']
-topology = {}
 
-for sh_cdp in files:
-    with open(sh_cdp, 'r') as f:
-        top = task_11_1.parse_cdp_neighbors(f.read())
-        topology.update(top)
 
-result = topology.copy()
-for k, v in topology.items():
-    if k in topology.values():
-        result.pop(v)
-#        pop_val = (k: v)
-#        topology.pop(pop_val)
-        #print('\t', k, '\t', v)
-    #else:
-        #print('\t', k, '\t', v)
-
-print(result)
-print(topology)
-#draw_network_graph.draw_topology(topology)
-  #  else:
- #       print(key, value)
-    #print(key, value)
-
-#print(result)
-#def create_network_map(filenames):
-'''
+def create_network_map(filenames):
+    '''
     параметр filenames, который ожидает как аргумент список с именами файлов,
     в которых находится вывод команды show cdp neighbors.
     Функция возвращет словарь, который описывает соединения между устройствами.
     Структура словаря:
     {('R4', 'Fa0/1'): ('R5', 'Fa0/1'),
      ('R4', 'Fa0/2'): ('R6', 'Fa0/0')}
-'''
+    '''
+    topology = {}
+    dup = []
+    for sh_cdp in filenames:
+        with open(sh_cdp, 'r') as f:
+            top = task_11_1.parse_cdp_neighbors(f.read())
+            topology.update(top)
+
+    for k, v in topology.items():
+        if k in topology.values():
+            dup.append(k)
+
+    ctop = topology.copy()
+
+    for k, v in topology.items():
+        if k in topology.values():
+            for i in range(0, len(dup) // 2):
+                try:
+                    ctop.pop(dup[i])
+                except KeyError:
+                    k = dup[i]
+    return ctop
+
+dng.draw_topology(create_network_map(files), 'my_topo')
