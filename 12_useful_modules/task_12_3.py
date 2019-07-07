@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 Задание 12.3
@@ -23,3 +24,22 @@ Reachable    Unreachable
 
 Для этого задания нет тестов
 '''
+import task_12_1
+from tabulate import tabulate
+
+
+def print_ip_table(reachable, unreachable):
+    '''
+    Функция ожидает как аргументы два списка:
+    * список доступных IP-адресов
+    * список недоступных IP-адресов
+    '''
+    columns = ['Reachable', 'Unreachable']
+    values = (reachable, unreachable)
+    return tabulate(values, headers=columns)
+
+
+if __name__ == '__main__':
+    ip_list = ['8.8.8.8', '4.4.4.4', '1.1.1.1', '123.324.41.12', '123.2.3.3']
+    c = task_12_1.ping_ip_addresses(ip_list)
+    print(print_ip_table(c[0], c[1]))
