@@ -26,3 +26,20 @@
 
 Ограничение: Все задания надо выполнять используя только пройденные темы.
 '''
+
+import task_15_2 as t152
+
+
+def convert_to_dict(value_list, cortege_w_vals):
+    result = []
+    for corteg in cortege_w_vals:
+        interface, address, status, protocol = corteg
+        value = dict(zip(value_list, (interface, status, protocol, address)))
+        result.append(value)
+    return result
+
+
+if __name__ == '__main__':
+    headers = ['interface', 'status', 'protocol', 'address']
+    file = 'sh_ip_int_br.txt'
+    print(convert_to_dict(headers, t152.parse_sh_ip_int_br(file)))
