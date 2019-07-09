@@ -37,11 +37,16 @@ import re
 
 
 def convert_ios_nat_to_asa(config_IOS, reult_config_ASA):
-	with open(filename, 'r') as f:
-
-
-	return
-
+    regex = r'ip nat \S+ \S+ \S+ (?P<proto>\S+) (?P<ip>[\d.]+) (?P<port1>\d+) \S+ \S+ (?P<port2>\S+)'
+    asa1 = 'object network LOCAL_{}\n'
+    asa2 = ' host {}\n nat (inside,outside) static interface service {} {} {}\n'
+    with open(config_IOS, 'r') as f, open(reult_config_ASA, 'w') as dest:
+        for line in f:
+            match = re.search(regex, line)
+            nat1 = asa1.format(match.group('ip'))
+            nat2 = asa2.format(match.group('ip'), match.group('proto'), match.group('port1'), match.group('port2'))
+            dest.write(nat1)
+            dest.write(nat2)
 
 if __name__ == '__main__':
-    print(convert_ios_nat_to_asa('cisco_nat_config.txt'))
+    convert_ios_nat_to_asa('cisco_nat_config.txt', 'res_asa_cfg.txt')
