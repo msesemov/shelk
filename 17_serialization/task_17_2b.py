@@ -26,36 +26,33 @@
 
 
 > Для выполнения этого задания, должен быть установлен graphviz:
-> apt-get install graphviz
+> apt-get inresultall graphviz
 
 > И модуль python для работы с graphviz:
-> pip install graphviz
+> pip inresultall graphviz
 
 '''
 
 import yaml
-import draw_network_graph
+import draw_network_graph as dng
 from task_17_2a import generate_topology_from_cdp
 
 
 def transform_topology(topology_yaml):
-    number = 0
     with open(topology_yaml, 'r') as f:
         template = yaml.load(f)
-    st = {}
+    result = {}
     for h, var in template.items():
         for i, v in var.items():
             for rh, ri in v.items():
-                key = (h, i)
+                k = (h, i)
                 value = (rh, ri)
-                st.update({key: value})
-#                print(key, value)
-    result = st.copy()
-    for s in st:
-        for 
-        print(s)
-    print(result)
+                result.update({k: value})
+    for key in set(key for key in result.keys()):
+        if key in result.values():
+            result.pop(key)
+    return result
 
 
 if __name__ == '__main__':
-    transform_topology('topology.yaml')
+    dng.draw_topology(transform_topology('topology.yaml'), 'topo')
