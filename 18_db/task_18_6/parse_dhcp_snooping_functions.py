@@ -74,17 +74,14 @@ def add_data(db_name, dhcp_files):
     import re
     regex_s = re.compile('(\w+\d+)_\S+\.txt')
     regex_d = re.compile('(\S+) +(\S+) +\d+ +\S+ +(\d+) +(\S+)')
-    conn = create_connection(db_name[0])
-    print('Добавляю данные в таблицу dhcp...')
+    conn = create_connection(db_name)
 
     for file in dhcp_files:
         sw = re.search(regex_s, file)
         switch = sw.group(1)
-        query_ac = '''UPDATE dhcp SET active = '0'
-                    WHERE switch = ?'''
+        query_ac = '''UPDATE dhcp SET active = '0' WHERE switch = ?'''
         write_data_to_db(conn, query_ac, [switch])
-        query_ac = '''UPDATE dhcp SET last_active = datetime('now')
-                    WHERE switch = ?'''
+        query_ac = '''UPDATE dhcp SET last_active = datetime('now') WHERE switch = ?'''
         write_data_to_db(conn, query_ac, [switch])
 
         with open(file) as data:
@@ -95,3 +92,38 @@ def add_data(db_name, dhcp_files):
                     query = '''INSERT OR REPLACE INTO dhcp (mac, ip, vlan, interface, switch, active, last_active)
                             VALUES (?, ?, ?, ?, ?, ?, datetime('now'))'''
                     write_data_to_db(conn, query, res)
+
+
+def get_all_data(db_name):
+    conn = create_connection(db_name)
+    query = 'SELECT * FROM dhcp'
+    print('-'*17, '', '-'*14,  '  --', '',  '-'*16,  '', '-'*3, '-', '-'*19)
+
+    for row in conn.execute(query):
+        print('\nАктивные записи:\n')
+
+        print('{:<17}  {:<15}  {:>2}  {:<16}  {} {} {}'.format(*row))
+    print('-'*17, '', '-'*14,  '  --', '',  '-'*16,  '', '-'*3, '-', '-'*19)
+
+
+def get_data(db_name, key, value):
+    conn = create_connection(db_name)
+    query_dict = {'vlan': 'select * from dhcp where vlan = ?',
+              'mac': 'select * from dhcp where mac = ?',
+              'ip': 'select * from dhcp where ip = ?',
+              'interface': 'select * from dhcp where interface = ?',
+              'switch': 'select * from dhcp where switch = ?',
+              'active': 'select * from dhcp where active = ?'}
+    keys = query_dict.keys()
+    if not key in keys:
+        print('Enter key from {}'.format(', '.join(keys)))
+    else:
+        conn.row_factory = sqlite3.Row
+
+        print('\nИнформация об устройствах с такими параметрами:', key, value)
+
+        query = query_dict[key]
+        print('-'*17, '', '-'*14,  '  --', '',  '-'*16,  '', '-'*3, '-', '-'*19)
+        for row in conn.execute(query, (value,)):
+            print('{:<17}  {:<15}  {:>2}  {:<16}  {} {} {}'.format(*row))
+        print('-'*17, '', '-'*14,  '  --', '',  '-'*16,  '', '-'*3, '-', '-'*19)
