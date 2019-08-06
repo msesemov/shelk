@@ -64,25 +64,26 @@ R1(config)#i
 
 import netmiko
 import paramiko
+import re
 
 
 def devices(src_yaml):
     import yaml
     with open(src_yaml, 'r') as f:
-        devs = yaml.load(f)
+        devs = yaml.safe_load(f)
         return devs
 
 
 def send_config_commands(device, config_commands, verbose=False):
     print('Connection to device {}'.format(device['ip']))
     try:
+        #regex = '{}\n( .*\n)* {}'.format(section, command)
+
         if not verbose:
             with netmiko.ConnectHandler(**device) as ssh:
                 ssh.enable()
-                for command in config_commands:
-                    result = ssh.send_command(command)
-                    print(result)
-        else:
+                result = ssh.send_config_set(config_commands)
+                return result
             device.update({'verbose': True})
             with netmiko.ConnectHandler(**device, ) as ssh:
 
@@ -100,8 +101,7 @@ if __name__ == '__main__':
     commands_with_errors = ['logging 0255.255.1', 'logging', 'i']
     correct_commands = ['logging buffered 20010', 'ip http server']
     commands = commands_with_errors + correct_commands
-    print(commands)
     for DEVICE_PARAMS in devices('devices.yaml'):
-        send_config_commands(DEVICE_PARAMS, commands)
+        print(send_config_commands(DEVICE_PARAMS, commands))
 
 
