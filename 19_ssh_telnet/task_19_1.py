@@ -37,10 +37,10 @@ def send_show_command(DEVICE_PARAMS, COMMAND):
         ssh.enable()
 
         result = ssh.send_command(COMMAND)
-        print(result)
+        return result
 
 
 if __name__ == '__main__':
     command = 'sh ip int br'
     for DEVICE_PARAMS in devices('devices.yaml'):
-        send_show_command(DEVICE_PARAMS, command)
+        print(send_show_command(DEVICE_PARAMS, command))
