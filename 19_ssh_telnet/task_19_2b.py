@@ -75,22 +75,46 @@ def devices(src_yaml):
 
 
 def send_config_commands(device, config_commands, verbose=False):
-    print('Connection to device {}'.format(device['ip']))
+    template = '''Команда "{}" выполнилась с ошибкой "{}" на устройстве {}'''
     try:
-        #regex = '{}\n( .*\n)* {}'.format(section, command)
-
+        rex_err = r'#(.+)\n\s*\^?\n?%\s(\w+\s\w+\s?\w+)'
+        rex_ok = r'#(.+)\n\w'
         if not verbose:
             with netmiko.ConnectHandler(**device) as ssh:
                 ssh.enable()
                 result = ssh.send_config_set(config_commands)
-                return result
+                match = re.finditer(rex_err, result)
+                bad = {}
+                good = {}
+                if match:
+                    for m in match:
+                        print(template.format(*m.groups(), device['ip']))
+                        bad.update({m.groups()[0]: m.groups()[1]})
+                match = re.finditer(rex_ok, result)
+                if match:
+                    for m in match:
+                        if m.groups()[0] != 'end':
+                            good.update({m.groups()[0]: None})
+                return (good, bad)
+        else:
+            print('Connection to device {}'.format(device['ip']))
             device.update({'verbose': True})
-            with netmiko.ConnectHandler(**device, ) as ssh:
-
+            with netmiko.ConnectHandler(**device) as ssh:
                 ssh.enable()
-
                 result = ssh.send_config_set(config_commands)
-                return result
+                match = re.finditer(rex_err, result)
+                bad = {}
+                good = {}
+                if match:
+                    for m in match:
+                        print(template.format(*m.groups(), device['ip']))
+                        bad.update({m.groups()[0]: m.groups()[1]})
+                match = re.finditer(rex_ok, result)
+                if match:
+                    for m in match:
+                        if m.groups()[0] != 'end':
+                            good.update({m.groups()[0]: None})
+                return (good, bad)
     except paramiko.ssh_exception.AuthenticationException as e:
         return e
     except netmiko.ssh_exception.NetMikoTimeoutException as e:
@@ -102,6 +126,4 @@ if __name__ == '__main__':
     correct_commands = ['logging buffered 20010', 'ip http server']
     commands = commands_with_errors + correct_commands
     for DEVICE_PARAMS in devices('devices.yaml'):
-        print(send_config_commands(DEVICE_PARAMS, commands))
-
-
+        print(send_config_commands(DEVICE_PARAMS, commands, True))
