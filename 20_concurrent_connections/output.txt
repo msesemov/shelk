@@ -1,0 +1,30 @@
+
+R2#sh arp
+Protocol  Address          Age (min)  Hardware Addr   Type   Interface
+Internet  192.168.100.1          40   ca01.061e.0008  ARPA   FastEthernet0/0
+Internet  192.168.100.2           -   ca02.062d.0008  ARPA   FastEthernet0/0
+Internet  192.168.100.3          40   ca03.063c.0008  ARPA   FastEthernet0/0
+Internet  192.168.100.100        22   8ad1.1455.65cc  ARPA   FastEthernet0/0
+R1#sh ip int br
+Interface                  IP-Address      OK? Method Status                Protocol
+FastEthernet0/0            192.168.100.1   YES NVRAM  up                    up      
+FastEthernet0/1            unassigned      YES NVRAM  administratively down down    
+
+R1#sh arp
+Protocol  Address          Age (min)  Hardware Addr   Type   Interface
+Internet  192.168.100.1           -   ca01.061e.0008  ARPA   FastEthernet0/0
+Internet  192.168.100.2          40   ca02.062d.0008  ARPA   FastEthernet0/0
+Internet  192.168.100.3          40   ca03.063c.0008  ARPA   FastEthernet0/0
+Internet  192.168.100.100        22   8ad1.1455.65cc  ARPA   FastEthernet0/0
+R3#sh ip int br
+Interface                  IP-Address      OK? Method Status                Protocol
+FastEthernet0/0            192.168.100.3   YES NVRAM  up                    up      
+FastEthernet0/1            unassigned      YES NVRAM  administratively down down    
+
+R3#sh ip route | ex -
+
+Gateway of last resort is not set
+
+      192.168.100.0/24 is variably subnetted, 2 subnets, 2 masks
+C        192.168.100.0/24 is directly connected, FastEthernet0/0
+L        192.168.100.3/32 is directly connected, FastEthernet0/0

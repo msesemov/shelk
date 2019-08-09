@@ -34,7 +34,8 @@ Ethernet0/1                unassigned      YES NVRAM  administratively down down
 
 Проверить работу функции на устройствах из файла devices.yaml
 '''
-
+import netmiko
+import paramiko
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
@@ -45,12 +46,22 @@ def devices(src_yaml):
     return devs
 
 
-def send_show_command_to_devices(device, COMMAND):
-    try:
-        with netmiko.ConnectHandler(**device) as ssh:
-            ssh.enable()
+def send_show_command_to_devices(devices, command, filename, limit=3):
+    with open(filename, 'w+') as wfile:
+        with ThreadPoolExecutor(max_workers=limit) as executor:
+            future = [executor.submit(send_show_command, device)
+                    for device in devices]
+            for f in as_completed(future):
+                    wfile.write(f.result())
 
-            result = ssh.send_command(COMMAND)
+
+def send_show_command(DEVICE_PARAMS, COMMAND='sh ip int br'):
+    #print('Connection to device {}'.format(DEVICE_PARAMS['ip']))
+    try:
+        with netmiko.ConnectHandler(**DEVICE_PARAMS) as ssh:
+            ssh.enable()
+            prompt = '\n' + ssh.find_prompt() + COMMAND + '\n'
+            result = prompt  + ssh.send_command(COMMAND)
             return result
     except paramiko.ssh_exception.AuthenticationException as e:
         return e
@@ -58,21 +69,6 @@ def send_show_command_to_devices(device, COMMAND):
         return e
 
 
-
-
-def threads_conn(function, devices, limit=3):
-    reachable = []
-    unreachable = []
-    with ThreadPoolExecutor(max_workers=limit) as executor:
-        future = [executor.submit(function, device)
-                for device in devices]
-        for f in as_completed(future):
-            print(f.result())
-
-
-
 if __name__ == '__main__':
-    ip_list = []
-    for DEVICE_PARAMS in devices('devices.yaml'):
-        ip_list.append(DEVICE_PARAMS['ip'])
-    print(threads_conn(send_show_command_to_devices, ip_list))
+    command = 'sh ip int br'
+    send_show_command_to_devices(devices('devices.yaml'), command, 'output.txt')

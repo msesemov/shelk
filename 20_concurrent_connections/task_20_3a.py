@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 Задание 20.3a
@@ -47,9 +48,45 @@ O        10.30.0.0/24 [110/20] via 192.168.100.1, 07:12:03, Ethernet0/0
 
 Проверить работу функции на устройствах из файла devices.yaml и словаре commands
 '''
+import netmiko
+import paramiko
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-commands = {'192.168.100.1': ['sh ip int br', 'sh arp'],
+
+def devices(src_yaml):
+    import yaml
+    with open(src_yaml, 'r') as f:
+        devs = yaml.safe_load(f)
+    return devs
+
+
+def send_show_command_to_devices(devices, commands_dict, filename, limit=3):
+    with open(filename, 'w+') as wfile:
+        with ThreadPoolExecutor(max_workers=limit) as executor:
+            future = [executor.submit(send_show_command, device, commands_dict[device['ip']])
+                    for device in devices]
+            for f in as_completed(future):
+                    wfile.write(f.result())
+
+
+def send_show_command(DEVICE_PARAMS, COMMAND):
+    try:
+        with netmiko.ConnectHandler(**DEVICE_PARAMS) as ssh:
+            ssh.enable()
+            result = []
+            for cmd in COMMAND:
+                prompt = '\n' + ssh.find_prompt() + cmd + '\n'
+                output = prompt  + ssh.send_command(cmd)
+                result.append(output)
+            return '\n'.join(result)
+    except paramiko.ssh_exception.AuthenticationException as e:
+        return e
+    except netmiko.ssh_exception.NetMikoTimeoutException as e:
+        return e
+
+
+if __name__ == '__main__':
+    commands = {'192.168.100.1': ['sh ip int br', 'sh arp'],
             '192.168.100.2': ['sh arp'],
             '192.168.100.3': ['sh ip int br', 'sh ip route | ex -']}
-
-
+    send_show_command_to_devices(devices('devices.yaml'), commands, 'output.txt')
