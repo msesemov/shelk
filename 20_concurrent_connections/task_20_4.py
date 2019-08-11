@@ -3,7 +3,9 @@
 '''
 Задание 20.4
 
-Создать функцию send_commands_to_devices, которая отправляет команду show или config на разные устройства в параллельных потоках, а затем записывает вывод команд в файл.
+Создать функцию send_commands_to_devices, которая отправляет 
+команду show или config на разные устройства в параллельных 
+потоках, а затем записывает вывод команд в файл.
 
 Параметры функции:
 * devices - список словарей с параметрами подключения к устройствам
@@ -83,3 +85,63 @@ R3#
 
 Для выполнения задания можно создавать любые дополнительные функции.
 '''
+import netmiko
+import paramiko
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+
+def devices(src_yaml):
+    import yaml
+    with open(src_yaml, 'r') as f:
+        devs = yaml.safe_load(f)
+    return devs
+
+
+def send_show_command(DEVICE_PARAMS, COMMAND):
+    try:
+        with netmiko.ConnectHandler(**DEVICE_PARAMS) as ssh:
+            ssh.enable()
+            result = []
+            prompt = '\n' + ssh.find_prompt() + COMMAND + '\n'
+            output = prompt + ssh.send_command(COMMAND)
+            result.append(output)
+            return '\n'.join(result)
+    except paramiko.ssh_exception.AuthenticationException as e:
+        return e
+    except netmiko.ssh_exception.NetMikoTimeoutException as e:
+        return e
+
+
+def send_config_commands(device, config_commands):
+    try:
+        with netmiko.ConnectHandler(**device) as ssh:
+            ssh.enable()
+            result = ssh.send_config_set(config_commands)
+            return result
+    except paramiko.ssh_exception.AuthenticationException as e:
+        return e
+    except netmiko.ssh_exception.NetMikoTimeoutException as e:
+        return e
+
+
+def send_commands_to_devices(devices, config=None, show=None, filename="w", limit=3):
+    with open(filename, 'w+') as wfile:
+        if config:
+            with ThreadPoolExecutor(max_workers=limit) as executor:
+                future = [executor.submit(send_config_commands, device, config)
+                        for device in devices]
+                for f in as_completed(future):
+                        wfile.write(f.result())
+        if show:
+            with ThreadPoolExecutor(max_workers=limit) as executor:
+                future = [executor.submit(send_show_command, device, show)
+                        for device in devices]
+                for f in as_completed(future):
+                        wfile.write(f.result())
+
+
+if __name__ == '__main__':
+    send_commands_to_devices(devices('devices.yaml'),
+                    #config=['logging 1.1.1.1', 'router ospf 1', 'network 1.1.1.1 0.0.0.0 area 0'],
+                    show='show cdp nei',
+                    filename='output.txt')
