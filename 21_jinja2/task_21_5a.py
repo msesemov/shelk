@@ -34,22 +34,6 @@ import paramiko
 import re
 
 
-def create_vpn_config(template1 , template2, data_dict):
-    '''
-    Параметры функции:
-    * template1 - имя файла с шаблоном, который создает конфигурацию для одной строны туннеля
-    * template2 - имя файла с шаблоном, который создает конфигурацию для второй строны туннеля
-    * data_dict - словарь со значениями, которые надо подставить в шаблоны
-    '''
-
-    env = Environment(loader=FileSystemLoader('templates'),
-                        trim_blocks=True, lstrip_blocks=True)
-    template1 = env.get_template(template1)
-    template2 = env.get_template(template2)
-
-    return (template1.render(data_dict), template2.render(data_dict))
-
-
 def send_show_command(device, command):
     try:
         with netmiko.ConnectHandler(**device) as ssh:
@@ -102,13 +86,29 @@ def send_config_commands(device, config_commands, verbose=False):
 def configure_vpn(src_device_params, dst_device_params, src_template, dst_template, vpn_data_dict):
     intf1 = send_show_command(src_device_params, 'show ip int brief')
     intf2 = send_show_command(dst_device_params, 'show ip int brief')
-    regex = r'^(\w+)(\d+)\s+'
-    match1 = re.findall(regex, intf1)
-    if match1:
-        for m in match1:
-            print(m)
-    print(intf1, intf2)
-
+    env = Environment(loader=FileSystemLoader('templates'),
+                        trim_blocks=True, lstrip_blocks=True)
+    src_template = env.get_template(src_template)
+    dst_template = env.get_template(dst_template)
+    regex = r'[Tt]unnel(\d+)\s'
+    match1 = re.finditer(regex, intf1)
+    match2 = re.finditer(regex, intf2)
+    tunnels_set = set()
+    for m in match1:
+        num = int(m.group(1))
+        tunnels_set.add(num)
+    for m in match2:
+        num = int(m.group(1))
+        tunnels_set.add(num)
+    if len(tunnels_set) == 0:
+        vpn_data_dict['tun_num'] = 0
+    else:
+        tunnels_list = list(tunnels_set)
+        next_tunn = tunnels_list[-1] + 1
+        vpn_data_dict['tun_num'] = next_tunn
+    src = send_config_commands(src_device_params, src_template.render(vpn_data_dict))
+    dst = send_config_commands(dst_device_params, dst_template.render(vpn_data_dict))
+    return [src, dst]
 
 if __name__ == '__main__':
 
@@ -130,4 +130,4 @@ if __name__ == '__main__':
                 'password': 'cisco',
                 'secret': 'cisco'}
 
-    configure_vpn(src_dev, dst_dev, 'gre_ipsec_vpn_1.txt' , 'gre_ipsec_vpn_2.txt', data)
+    print(configure_vpn(src_dev, dst_dev, 'gre_ipsec_vpn_1.txt' , 'gre_ipsec_vpn_2.txt', data))
