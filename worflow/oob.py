@@ -8,16 +8,15 @@ from pysnmp.entity.rfc3413.oneliner import cmdgen
 
 
 community = 'sbrf'
-host = '192.168.100.1'
+host = '192.168.250.41'
 OID = {'sysinfo': '1.3.6.1.2.1.1.1.0',
        'sysname': '1.3.6.1.2.1.1.5.0',
        'location': '1.3.6.1.2.1.1.6.0'}
-OID_walk = {'cdp': {'intf': '1.3.6.1.4.1.9.9.23.1.1.1.1.6',
+OID_walk = {'cdp': {'cdp_ifindex': '1.3.6.1.4.1.9.9.23.1.2.1.1.3',
+                    'intf': '1.3.6.1.4.1.9.9.23.1.1.1.1.6',
                     'nbr': '1.3.6.1.4.1.9.9.23.1.2.1.1.6',
                     'nbr_intf': '1.3.6.1.4.1.9.9.23.1.2.1.1.7',
                     'nbr_model': '1.3.6.1.4.1.9.9.23.1.2.1.1.8'}
-
-
             }
 
 
@@ -52,7 +51,10 @@ def snmpget(host, oid, community='sbrf'):
             result = {}
             for oid, value in varBinds:
                 result.update({str(oid): str(value)})
-            return result
+            if len(result) == 1:
+                return result[str(oid)]
+            else:
+                return result
 
 
 def snmpwalk(host, oid, community='sbrf'):
@@ -82,17 +84,33 @@ def snmpwalk(host, oid, community='sbrf'):
 
 def cdp_nbr(host, community='sbrf'):
     cdp_host = snmpget(host, OID['sysname'])
-    intf = snmpwalk(host, OID_walk['cdp']['intf'])
-    nbr = snmpwalk(host, OID_walk['cdp']['nbr'])
-    nbr_intf = snmpwalk(host, OID_walk['cdp']['nbr_intf'])
-    print(cdp_host)
-    for i in intf:
-        print(i)
-    for n in nbr:
-        print(n)
-    for ni in nbr_intf:
-        print(ni)
+    cdp_ifindexes = snmpwalk(host, OID_walk['cdp']['cdp_ifindex'])
+    interfaces = snmpwalk(host, OID_walk['cdp']['intf'])
+    nbrs= snmpwalk(host, OID_walk['cdp']['nbr'])
+    nbr_intfs = snmpwalk(host, OID_walk['cdp']['nbr_intf'])
+    topology = {}
+    nbr_oids = []
+    for oid, interface in interfaces.items():
+        ifindex = oid.split('.')[-1]
+        cdp_interface_tree = []
+        cdp_interface_tree.append(OID_walk['cdp']['intf'])
+        cdp_interface_tree.append(ifindex)
+        topology.update({(cdp_host, interface): None})
 
+        for oid, index in cdp_ifindexes.items():
+            cdp_interface_tree_r = cdp_interface_tree.copy()
+            cdp_ifindex = oid.split('.')[-1]
+            cdp_interface_tree_r.append(cdp_ifindex)
+            nbr_oid = '.'.join(cdp_interface_tree_r)
+            nbr_oids.append(nbr_oid)
+    print(nbr_oids)
+    print(interfaces)
+    print(nbrs)
+    print(nbr_intfs)
+
+
+
+    print(topology)
 
 
 
