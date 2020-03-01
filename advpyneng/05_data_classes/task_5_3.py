@@ -21,14 +21,19 @@ Out[5]: {'title': 'Good Omens', 'price': 35.0, 'quantity': 124, 'total': 4340.0}
 которые созданы через property.
 
 '''
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
+
 
 @dataclass
 class Book:
     title: str
     price: float
-    _price: float = field(init=False, repr=False)
     quantity: int = 0
+    total: float = 0
+    #total: float = field(init=False, repr=False)
+
+    def __post_init__(self):
+        _price: float = field(init=False, repr=False)
 
     @property
     def total(self):
@@ -45,3 +50,6 @@ class Book:
         if not value >= 0:
             raise ValueError('Значение должно быть положительным')
         self._price = float(value)
+
+    def to_dict(self):
+        return asdict(self)

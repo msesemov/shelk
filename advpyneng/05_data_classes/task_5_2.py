@@ -35,3 +35,6 @@ class IPAddress:
     def __post_init__(self):
         self._ip = int(ipaddress.ip_address(self.ip))
 
+    def __add__(self, other):
+        ip = ipaddress.ip_address(self._ip) + other
+        return IPAddress(str(ip), self.mask)
